@@ -2,7 +2,7 @@
 
 ## headtail - do both a "head" and "tail" of stdin
 ## atom smasher
-## v1.2 27 dec 2022
+## v1.2a 27 dec 2022
 ## https://github.com/atom-smasher/headtail
 
 ## in theory, sh should be most portable, but this should run fine as a bash script, if needed
@@ -84,4 +84,4 @@ shift $(( $OPTIND - 1 ))
 }
 
 ## read from stdin, to both head and tail
-pee  "head -n ${lines_head:=10} ; [ '${delimiter}' ] && echo '${delimiter}'" "tail -n ${lines_tail:=10}"
+pee  "head -n ${lines_head:=10} ; [ -z '${delimiter}' ] || echo '${delimiter}'" "tail -n ${lines_tail:=10}"
