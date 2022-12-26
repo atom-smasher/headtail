@@ -2,24 +2,30 @@
 
 ## headtail - do both a "head" and "tail" of stdin
 ## atom smasher
-## v1.1 26 dec 2022
+## v1.2 27 dec 2022
 ## https://github.com/atom-smasher/headtail
+
+## in theory, sh should be most portable, but this should run fine as a bash script, if needed
 
 ## requires 'pee' - https://joeyh.name/code/moreutils/
 ## quick sanity check, to see if "pv" is installed                                                                                
 : | pee : : 2> /dev/null || {
-	echo "error: ${0} requires 'pee', but pee was not found in PATH"
+	echo "error: ${0} requires 'pee', but pee was not found"
         echo 'See: https://joeyh.name/code/moreutils/'
         exit 99
 }
 
 show_help () {
     echo 'usage:'
-    echo '  headtail [-]LINES'
-    echo '      headtail reads from stdin'
-    echo '      headtail accepts LINES (an integer) as an option; default is 10'
-    echo "      LINES may (or may not) be preceeded with a dash; it doesn't matter to me"
-    echo '      headtail reads stdin, and outputs LINES of head and LINES of tail'
+    echo '  headtail [options] [LINES]'
+    echo '  headtail [options]'
+    echo '    -h           = help'
+    echo '    -d DELIMITER = set a delimiter other than the default "--"'
+    echo '    -D           = no DELIMITER'
+    echo '    -n LINES     = how many lines of head and tail to output; default is 10'
+    echo '    LINES        = how many lines of head and tail to ouput; default is 10'
+    echo '    LINES may be specified as a single integer, or HEAD/TAIL; default is 10/10'
+    echo '  headtail reads from stdin, and outputs LINES of head and LINES of tail'
     exit ${1}
 }
 
@@ -28,15 +34,54 @@ show_help () {
     show_help 100
 }
 
-## pre-process the LINES count
-lines=${1##-}
-lines=${lines:=10}
+## set this later; make it unset for now
+unset lines
 
-## test if the first argument is an integer
-## subsequent arguments are ignored
-[ 0 -le ${lines} ] 2> /dev/null || {
+## set defaults here
+delimiter=--
+
+## options
+while getopts "Dd:hn:" options
+do
+    case ${options} in
+	d)
+	    ## DELIMITER
+	    ## set a DELIMITER other than the default '--'
+	    delimiter="${OPTARG}"
+	    ;;
+	D)
+	    ## no DELIMITER
+	    unset delimiter
+	    ;;
+	h)
+	    ## help
+	    show_help 0
+	    ;;
+	n)
+	    ## head/tail lines to show
+	    lines_head="${OPTARG%%/*}"
+	    lines_tail="${OPTARG##*/}"
+	    ;;
+	?)
+	    ## error
+	    show_help 102
+	    ;;
+    esac
+done
+shift $(( $OPTIND - 1 ))
+
+## pre-process the LINES count from first argument, if needed
+[ "$lines_head" ] || {
+    lines_head="${1%%/*}"
+}
+[ "$lines_tail" ] || {
+    lines_tail="${1##*/}"
+}
+
+## test if $lines is an integer
+[ 0 -le ${lines_head:=10} -a 0 -le ${lines_tail:=10} ] 2> /dev/null || {
     show_help 101
 }
 
 ## read from stdin, to both head and tail
-pee  "head -n ${lines} ; echo --"  "tail -n ${lines}"
+pee  "head -n ${lines_head:=10} ; [ '${delimiter}' ] && echo '${delimiter}'" "tail -n ${lines_tail:=10}"
