@@ -3,6 +3,7 @@
 ## headtail - do both a "head" and "tail" of stdin
 ## atom smasher
 ## v1.2a 27 dec 2022
+## v1.2b 05 jan 2023
 ## https://github.com/atom-smasher/headtail
 
 ## in theory, sh should be most portable, but this should run fine as a bash script, if needed
@@ -29,13 +30,8 @@ show_help () {
     exit ${1}
 }
 
-## test if there's input on stdin
-[ -t 0 ] && {
-    show_help 100
-}
-
 ## set this later; make it unset for now
-unset lines
+unset lines lines_head lines_tail
 
 ## set defaults here
 delimiter=--
@@ -70,7 +66,7 @@ do
 done
 shift $(( $OPTIND - 1 ))
 
-## pre-process the LINES count from first argument, if needed
+## pre-process the LINES count from first argument, as needed
 [ "$lines_head" ] || {
     lines_head="${1%%/*}"
 }
@@ -84,4 +80,4 @@ shift $(( $OPTIND - 1 ))
 }
 
 ## read from stdin, to both head and tail
-pee  "head -n ${lines_head:=10} ; [ -z '${delimiter}' ] || echo '${delimiter}'" "tail -n ${lines_tail:=10}"
+pee  "head -n ${lines_head:=10} 2> /dev/null ; echo -n \"${delimiter}${delimiter:+\n}\" 2> /dev/null" "tail -n ${lines_tail:=10} 2> /dev/null"
